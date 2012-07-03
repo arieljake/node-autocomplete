@@ -1,0 +1,28 @@
+{
+	"name": "node-autocomplete",
+	"description": "autocomplete server for node.js",
+	"version": "0.1.0",
+	"author": "Ariel Jakobovits <arieljake@yahoo.com>",
+	"contributors": [
+		{
+			"name":"Ariel Jakobovits",
+			"email":"arieljake@yahoo.com"
+		}
+	],
+	"keywords": [
+		"autocomplete",
+		"trie"
+	],
+	"engines": {
+		"node": ">= 0.6"
+	},
+	"dependencies": {
+		"burst-trie": ">=0.1.0"
+	},
+	"devDependencies": {},
+	"repository": {
+		"type": "git",
+		"url": "git://github.com/arieljake/node-autocomplete.git"
+	},
+	"license": "MIT"
+}
