@@ -1,14 +1,10 @@
 var express = require('express');
-var BurstTrie = require("burst-trie");
-var OptionsFromBSTNode = require("./OptionsFromBSTNode.js");
+var util = require("util");
+var Autocomplete = require("./Autocomplete.js");
 
 var port = process.env.PORT || 5000;
 var app = express.createServer();
-var myTrie = BurstTrie.createTrie();
-var myOptions = new OptionsFromBSTNode(myTrie);
-var myTrieWriter = BurstTrie.createTrieWriter();
-
-loadDict(myTrie,1000);
+var autocomplete = new Autocomplete("dict/string.txt");
 
 app.configure(function ()
 {
@@ -19,16 +15,49 @@ app.configure(function ()
 app.get('/autocomplete/:value', function(request, response)
 {
 	var term = request.params["value"];
-	var options = myOptions.getOptionsFor(term);
+	var startTime = new Date();
+	var options = autocomplete.getOptionsFor(term);
+	var endTime = new Date();
+	var execTime = (endTime.getTime() - startTime.getTime());
 
-	response.send(options);
+	var result = {
+		summary: {
+			execTime: execTime,
+			execTimeUnits: "ms",
+			optionCount: options.length
+		},
+		options: options
+	}
 
-	console.log("Responded to " + term + " with " + options.length + " options");
+	response.send(result);
+
+	console.log("Responded to " + term + " with " + options.length + " options in " + execTime + "ms");
 });
 
 app.get('/dict', function(request, response)
 {
-	response.send("<pre>" + myTrieWriter.writeTrie(myTrie) + "</pre>");
+	response.send("<pre>" + autocomplete.trieToString() + "</pre>");
+});
+
+app.get('/memory', function (request,response)
+{
+	response.send(util.inspect(process.memoryUsage()));
+});
+
+app.get('/add/:term', function (request,response)
+{
+	var term = request.params["term"];
+
+	autocomplete.add(term);
+
+	response.send(term + " added");
+});
+
+app.get('/unload', function (request,response)
+{
+	autocomplete.unload();
+
+	response.send("unloaded");
 });
 
 app.listen(port, function()
@@ -37,32 +66,3 @@ app.listen(port, function()
 	console.log("Send autocomplete requests to /autocomplete/:value");
 	console.log("View trie by sending request to /dict");
 });
-
-function loadDict(trie,maxWords)
-{
-	var fs = require("fs");
-	var data = fs.readFileSync( "dict/string.txt", "utf8");
-	var words = data.split(" ");
-	var numWords = Math.min(words.length,maxWords);
-	var terms = [];
-	var word;
-
-	for (var i=0; i < numWords; i++)
-	{
-		terms.push(words[i]);
-	}
-
-	terms.sort(randOrd);
-
-	for (var i=0; i < numWords; i++)
-	{
-		trie.add(terms[i]);
-	}
-
-	return terms;
-}
-
-function randOrd()
-{
-	return (Math.round(Math.random())-0.5);
-}
